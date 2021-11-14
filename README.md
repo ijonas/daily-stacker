@@ -8,12 +8,12 @@ Dollar-cost-averaging (DCA) combined with HODLing has been proven time and time 
 
 Daily Stacker takes DCA to a new level. Waking up everyday owning a little bit more crypto is a nice feeling and Daily Stacker helps achieve that. 
 
-Here's how it works:
-1. once a month transfer some ETH to Daily Stacker
+## How it works
+
+Here's how Daily Stacker works:
+
+1. connect your wallet and once a month transfer some ETH to Daily Stacker
 2. setup a portfolio, e.g. 50% Wrapped Bitcoin, 35% LINK, 15% BAT
 3. for the next 30 days Daily Stacker will buy slivers of the tokens according to the ratios in your portfolio
 4. all purchases are automatically sent to your wallet
-
-
-
 
