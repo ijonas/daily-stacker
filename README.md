@@ -17,3 +17,8 @@ Here's how Daily Stacker works:
 3. for the next 30 days Daily Stacker will buy slivers of the tokens according to the ratios in your portfolio
 4. all purchases are automatically sent to your wallet
 
+# History
+
+Daily Stacker first came to life as a [Raspberry Pi project called SatStacker](https://github.com/ijonas/satstacker). SatStacker still runs today. However I collected a lot of feedback from people asking if they could a solution that they could run themselves without hardware.
+
+Daily Stacker was born as part of the [Chainlink Fall 2021 Hackathon](https://chain.link/hackathon)
