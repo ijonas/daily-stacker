@@ -1,96 +1,19 @@
-# 🏗 Scaffold-ETH
+# Daily Stacker
 
-> everything you need to build on Ethereum! 🚀
+Waking up to a little bit more crypto in your wallet is a great feeling. Daily Stacker wakes up before you do and buys you a little slice of your favourite tokens and sends them to your wallet.
 
-🧪 Quickly experiment with Solidity using a frontend that adapts to your smart contract:
+## Background
 
-![image](https://user-images.githubusercontent.com/2653167/124158108-c14ca380-da56-11eb-967e-69cde37ca8eb.png)
+Dollar-cost-averaging (DCA) combined with HODLing has been proven time and time again to be the best and simplest investment strategy to adopt. Don't try and time the market, don't try and catch the dips. Just buy at set intervals - daily, weekly, or monthly.
 
+Daily Stacker takes DCA to a new level. Waking up everyday owning a little bit more crypto is a nice feeling and Daily Stacker helps achieve that. 
 
-# 🏄‍♂️ Quick Start
-
-Prerequisites: [Node](https://nodejs.org/en/download/) plus [Yarn](https://classic.yarnpkg.com/en/docs/install/) and [Git](https://git-scm.com/downloads)
-
-> clone/fork 🏗 scaffold-eth:
-
-```bash
-git clone https://github.com/austintgriffith/scaffold-eth.git
-```
-
-> install and start your 👷‍ Hardhat chain:
-
-```bash
-cd scaffold-eth
-yarn install
-yarn chain
-```
-
-> in a second terminal window, start your 📱 frontend:
-
-```bash
-cd scaffold-eth
-yarn start
-```
-
-> in a third terminal window, 🛰 deploy your contract:
-
-```bash
-cd scaffold-eth
-yarn deploy
-```
-
-🔏 Edit your smart contract `YourContract.sol` in `packages/hardhat/contracts`
-
-📝 Edit your frontend `App.jsx` in `packages/react-app/src`
-
-💼 Edit your deployment scripts in `packages/hardhat/deploy`
-
-📱 Open http://localhost:3000 to see the app
-
-# 📚 Documentation
-
-Documentation, tutorials, challenges, and many more resources, visit: [docs.scaffoldeth.io](https://docs.scaffoldeth.io)
-
-# 🔭 Learning Solidity
-
-📕 Read the docs: https://docs.soliditylang.org
-
-📚 Go through each topic from [solidity by example](https://solidity-by-example.org) editing `YourContract.sol` in **🏗 scaffold-eth**
-
-- [Primitive Data Types](https://solidity-by-example.org/primitives/)
-- [Mappings](https://solidity-by-example.org/mapping/)
-- [Structs](https://solidity-by-example.org/structs/)
-- [Modifiers](https://solidity-by-example.org/function-modifier/)
-- [Events](https://solidity-by-example.org/events/)
-- [Inheritance](https://solidity-by-example.org/inheritance/)
-- [Payable](https://solidity-by-example.org/payable/)
-- [Fallback](https://solidity-by-example.org/fallback/)
-
-📧 Learn the [Solidity globals and units](https://solidity.readthedocs.io/en/v0.6.6/units-and-global-variables.html)
-
-# 🛠 Buidl
-
-Check out all the [active branches](https://github.com/austintgriffith/scaffold-eth/branches/active), [open issues](https://github.com/austintgriffith/scaffold-eth/issues), and join/fund the 🏰 [BuidlGuidl](https://BuidlGuidl.com)!
-
-  
- - 🚤  [Follow the full Ethereum Speed Run](https://medium.com/@austin_48503/%EF%B8%8Fethereum-dev-speed-run-bd72bcba6a4c)
+Here's how it works:
+1. once a month transfer some ETH to Daily Stacker
+2. setup a portfolio, e.g. 50% Wrapped Bitcoin, 35% LINK, 15% BAT
+3. for the next 30 days Daily Stacker will buy slivers of the tokens according to the ratios in your portfolio
+4. all purchases are automatically sent to your wallet
 
 
- - 🎟  [Create your first NFT](https://github.com/austintgriffith/scaffold-eth/tree/simple-nft-example)
- - 🥩  [Build a staking smart contract](https://github.com/austintgriffith/scaffold-eth/tree/challenge-1-decentralized-staking)
- - 🏵  [Deploy a token and vendor](https://github.com/austintgriffith/scaffold-eth/tree/challenge-2-token-vendor)
- - 🎫  [Extend the NFT example to make a "buyer mints" marketplace](https://github.com/austintgriffith/scaffold-eth/tree/buyer-mints-nft)
- - 🎲  [Learn about commit/reveal](https://github.com/austintgriffith/scaffold-eth/tree/commit-reveal-with-frontend)
- - ✍️  [Learn how ecrecover works](https://github.com/austintgriffith/scaffold-eth/tree/signature-recover)
- - 👩‍👩‍👧‍👧  [Build a multi-sig that uses off-chain signatures](https://github.com/austintgriffith/scaffold-eth/tree/meta-multi-sig)
- - ⏳  [Extend the multi-sig to stream ETH](https://github.com/austintgriffith/scaffold-eth/tree/streaming-meta-multi-sig)
- - ⚖️  [Learn how a simple DEX works](https://medium.com/@austin_48503/%EF%B8%8F-minimum-viable-exchange-d84f30bd0c90)
- - 🦍  [Ape into learning!](https://github.com/austintgriffith/scaffold-eth/tree/aave-ape)
 
-# 💬 Support Chat
 
-Join the telegram [support chat 💬](https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA) to ask questions and find others building with 🏗 scaffold-eth!
-
----
-
-🙏 Please check out our [Gitcoin grant](https://gitcoin.co/grants/2851/scaffold-eth) too!
