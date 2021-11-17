@@ -5,10 +5,14 @@
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  await deploy("YourContract", {
+
+  const fakeUniswapV2Router = await ethers.getContract("FakeUniswapV2Router", deployer);
+  const fakeETH = await deploy("FakeETH", { from: deployer, log: true });
+
+  await deploy("Stacker", {
     // Learn more about args here: https://www.npmjs.com/package/hardhat-deploy#deploymentsdeploy
     from: deployer,
-    // args: [ "Hello", ethers.utils.parseEther("1.5") ],
+    args: [fakeUniswapV2Router.address, fakeETH.address],
     log: true,
   });
 
@@ -48,4 +52,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
   */
 };
-module.exports.tags = ["YourContract"];
+module.exports.tags = ["Stacker"];
