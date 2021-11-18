@@ -14,12 +14,8 @@ describe.only("Stacker Dapp", function () {
     let fakeLINK;
     let fakeANT;
     let fakeUniswapV2Router;
-    let daiReceiver;
-
-    // quick fix to let gas reporter fetch data from gas station & coinmarketcap
-    // before((done) => {
-    //     setTimeout(done, 2000);
-    // });
+    let stackerUser;
+    let amountIn;
 
     describe("DailyStacker", function () {
         before(async () => {
@@ -40,48 +36,43 @@ describe.only("Stacker Dapp", function () {
             fakeANT = await FakeANT.deploy();
 
             const FakeUniswapV2Router = await ethers.getContractFactory("FakeUniswapV2Router");
-            fakeUniswapV2Router = await FakeUniswapV2Router.deploy(fakeDAI.address);
+            fakeUniswapV2Router = await FakeUniswapV2Router.deploy();
 
             const Stacker = await ethers.getContractFactory("Stacker");
             stacker = await Stacker.deploy(fakeUniswapV2Router.address, fakeETH.address);
+
+            console.log(`Stacker contract address: ${stacker.address}`)
+            amountIn = ethers.utils.parseEther("0.01")
+            const sendTx = await signer.sendTransaction({ to: stacker.address, value: amountIn, gasLimit: ethers.BigNumber.from("42000") });
+            await sendTx.wait()
+
         })
 
         it("should swap ETH for DAI", async () => {
-            try {
-                // preload UniswapRouter with some FDAI
-                const tx = await fakeDAI.transfer(fakeUniswapV2Router.address, ethers.BigNumber.from("3000000000000000000000")); // 4000 * 10 ** 18
-                await tx.wait()
+            // preload UniswapRouter with some FDAI
+            const tx = await fakeDAI.transfer(fakeUniswapV2Router.address, ethers.BigNumber.from("3000000000000000000000")); // 3000 * 10 ** 18
+            await tx.wait()
 
-                const uniswapRouterDAIBalance = await fakeDAI.balanceOf(fakeUniswapV2Router.address);
-                expect(ethers.BigNumber.from(uniswapRouterDAIBalance._hex).toString()).to.eq('3000000000000000000000');
+            const uniswapRouterDAIBalance = await fakeDAI.balanceOf(fakeUniswapV2Router.address);
+            expect(ethers.BigNumber.from(uniswapRouterDAIBalance._hex).toString()).to.eq('3000000000000000000000');
 
-                console.log(`Stacker contract address: ${stacker.address}`)
-                const prov = stacker.provider;
-                const amountIn = ethers.utils.parseEther("0.01")
-                const sendTx = await signer.sendTransaction({ to: stacker.address, value: amountIn, gasLimit: ethers.BigNumber.from("42000") });
-                console.log("TX Sent.. Awaiting.")
-                await sendTx.wait()
-                const contractETHBalance2 = await prov.getBalance(stacker.address);
-                expect(contractETHBalance2.toString()).to.eq(amountIn.toString())
+            const prov = stacker.provider;
+            const contractETHBalance2 = await prov.getBalance(stacker.address);
+            expect(contractETHBalance2.toString()).to.eq(amountIn.toString())
 
-                console.log("AmountIn sent to contract");
-                const resultAmountOut = await stacker.getAmountOutMin(fakeETH.address, fakeDAI.address, amountIn);
-                expect(resultAmountOut.toString()).to.eq('2206000000000000000000')
+            const resultAmountOut = await stacker.getAmountOutMin(fakeETH.address, fakeDAI.address, amountIn);
+            expect(resultAmountOut.toString()).to.eq('22060000000000000000')
 
-                const amountOut = ethers.BigNumber.from(resultAmountOut._hex)
-                await stacker.swap(
-                    fakeETH.address,
-                    fakeDAI.address,
-                    amountIn,
-                    amountOut,
-                    stackerUser.address
-                )
-                const stackerUserBalanceFDAI = await fakeDAI.balanceOf(stackerUser.address);
-                console.log("Called Swap");
-                expect(stackerUserBalanceFDAI.toString()).to.eq('2206000000000000000000');
-            } catch (error) {
-                console.error(error)
-            }
+            const amountOut = ethers.BigNumber.from(resultAmountOut._hex)
+            await stacker.swap(
+                fakeETH.address,
+                fakeDAI.address,
+                amountIn,
+                amountOut,
+                stackerUser.address
+            )
+            const stackerUserBalanceFDAI = await fakeDAI.balanceOf(stackerUser.address);
+            expect(stackerUserBalanceFDAI.toString()).to.eq('22060000000000000000');
         })
 
         it("allow user to setup a portfolio", async () => {
@@ -95,11 +86,31 @@ describe.only("Stacker Dapp", function () {
         })
 
         it("buys tokens according to the portfolio setup", async () => {
-            await stacker.buyPortfolio();
+
+            // preload UniswapRouter with some FDAI
+            const tx1 = await fakeLINK.transfer(fakeUniswapV2Router.address, ethers.BigNumber.from("3000000000000000000000")); // 3000 * 10 ** 18
+            await tx1.wait()
+
+            const tx2 = await fakeANT.transfer(fakeUniswapV2Router.address, ethers.BigNumber.from("3000000000000000000000")); // 3000 * 10 ** 18
+            await tx2.wait()
+
+            // verify balances
+            const uniswapRouterLINKBalance = await fakeLINK.balanceOf(fakeUniswapV2Router.address);
+            expect(ethers.BigNumber.from(uniswapRouterLINKBalance._hex).toString()).to.eq('3000000000000000000000');
+
+            const uniswapRouterANTBalance = await fakeANT.balanceOf(fakeUniswapV2Router.address);
+            expect(ethers.BigNumber.from(uniswapRouterANTBalance._hex).toString()).to.eq('3000000000000000000000');
+
+            // setup portfolio
+            await stacker.setPortfolio([fakeLINK.address, fakeANT.address], [25, 75]);
+
+            // make daily purchase of portfolio
+            await stacker.buyPortfolio(stackerUser.address);
+
             const stackerUserBalanceFLINK = await fakeLINK.balanceOf(stackerUser.address);
-            expect(stackerUserBalanceFLINK.toString()).to.eq('1206000000000000000000');
+            expect(stackerUserBalanceFLINK.toString()).to.eq('183833333333314950');
             const stackerUserBalanceFANT = await fakeANT.balanceOf(stackerUser.address);
-            expect(stackerUserBalanceFANT.toString()).to.eq('1206000000000000000000');
+            expect(stackerUserBalanceFANT.toString()).to.eq('551499999999944850');
 
         });
     });

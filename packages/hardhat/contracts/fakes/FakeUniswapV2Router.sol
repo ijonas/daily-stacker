@@ -2,14 +2,11 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract FakeUniswapV2Router is IUniswapV2Router02 {
-    IERC20Metadata FDAI;
-
-    constructor(address fdai) {
-        FDAI = IERC20Metadata(fdai);
-    }
+    constructor() {}
 
     function removeLiquidityETHSupportingFeeOnTransferTokens(
         address token,
@@ -170,7 +167,8 @@ contract FakeUniswapV2Router is IUniswapV2Router02 {
         address to,
         uint256 deadline
     ) external override returns (uint256[] memory amounts) {
-        FDAI.transfer(to, amountOutMin);
+        IERC20Metadata tokenToPurchase = IERC20Metadata(path[path.length - 1]);
+        tokenToPurchase.transfer(to, amountOutMin);
         uint256[] memory _amounts;
         amounts = _amounts;
         return amounts;
@@ -266,7 +264,7 @@ contract FakeUniswapV2Router is IUniswapV2Router02 {
     {
         uint256[] memory _amounts = new uint256[](2);
         _amounts[0] = amountIn;
-        _amounts[1] = 2206 * 10**18;
+        _amounts[1] = 2206 * amountIn;
         amounts = _amounts;
         return amounts;
     }

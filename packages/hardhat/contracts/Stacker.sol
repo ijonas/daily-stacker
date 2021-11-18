@@ -4,6 +4,7 @@ pragma solidity >=0.8.0 <0.9.0;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 struct PortfolioShare {
@@ -13,18 +14,21 @@ struct PortfolioShare {
 
 contract Stacker is Ownable {
     IUniswapV2Router02 internal uniswapV2Router;
+    address uniswapV2RouterAddress;
 
     //address of WETH token.  This is needed because some times it is better to trade through WETH.
     //you might get a better price using WETH.
     //example trading from token A to WETH then WETH to token B might result in a better price
     address WETHaddress;
+    uint8 daysRemaining = 30;
 
     PortfolioShare[] public portfolio;
     event TopupReceived(uint256 amount);
 
-    constructor(address uniswap_v2_router, address wethAddress) {
-        uniswapV2Router = IUniswapV2Router02(uniswap_v2_router);
-        WETHaddress = wethAddress;
+    constructor(address _uniswap_v2_router, address _wethAddress) {
+        uniswapV2Router = IUniswapV2Router02(_uniswap_v2_router);
+        WETHaddress = _wethAddress;
+        uniswapV2RouterAddress = _uniswap_v2_router;
     }
 
     function topup() public payable {
@@ -35,38 +39,60 @@ contract Stacker is Ownable {
         return payable(address(this)).balance;
     }
 
-    function setPortfolio(address[] memory tokens, uint8[] memory shares)
+    function setPortfolio(address[] memory _tokens, uint8[] memory _shares)
         public
     {
         require(
-            tokens.length == shares.length,
+            _tokens.length == _shares.length,
             "Specify same number of tokens and share percentages"
         );
         require(
-            tokens.length > 0,
+            _tokens.length > 0,
             "Specify atleast 1 token & share percentage"
         );
 
         delete portfolio;
-        uint8 totalShare = 0;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            totalShare += shares[i];
-            portfolio.push(PortfolioShare(shares[i], tokens[i]));
+        uint8 _totalShare = 0;
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            _totalShare += _shares[i];
+            portfolio.push(PortfolioShare(_shares[i], _tokens[i]));
         }
         require(
-            totalShare == 100,
+            _totalShare == 100,
             "Portfolio shares need to add up to 100 percent exactly."
         );
     }
 
-    function buyPortfolio() public {
+    function buyPortfolio(address _to) public {
         // figure out how big a slice of ETH we're spending today
         // today's ETH slice = eth balance / days remaining
-        // for each token share
-        // figure out the percentage of today's ETH slice
-        // amountIn = today's ETH slice * token share
-        // get the token's amountOut for amountIn
-        // swap(WETH, token, amountIn, amountOut, sender wallet )
+        uint256 ethSlice;
+        if (daysRemaining <= 1) {
+            ethSlice = ethBalance();
+        } else {
+            ethSlice = SafeMath.div(ethBalance(), daysRemaining);
+        }
+        require(ethSlice > 0, "Stacker needs ETH to spend");
+
+        // for each portfolio share
+        for (uint8 i = 0; i < portfolio.length; i++) {
+            // figure out the percentage of today's ETH slice
+            // amountIn = today's ETH slice * token share
+            uint256 amountIn = SafeMath.mul(
+                SafeMath.div(ethSlice, 100),
+                portfolio[i].percentage
+            );
+
+            // get the token's amountOut for amountIn
+            uint256 amountOut = getAmountOutMin(
+                WETHaddress,
+                portfolio[i].token,
+                amountIn
+            );
+
+            // swap(WETH, token, amountIn, amountOut, sender wallet )
+            swap(WETHaddress, portfolio[i].token, amountIn, amountOut, _to);
+        }
     }
 
     //this swap function is used to trade from one token to another
@@ -83,7 +109,7 @@ contract Stacker is Ownable {
         uint256 _amountIn,
         uint256 _amountOutMin,
         address _to
-    ) external {
+    ) public {
         //first we need to transfer the amount in tokens from the msg.sender to this contract
         //this contract will have the amount of in tokens
         // IERC20(_tokenIn).transferFrom(msg.sender, address(this), _amountIn);
@@ -100,11 +126,16 @@ contract Stacker is Ownable {
             path = new address[](2);
             path[0] = _tokenIn;
             path[1] = _tokenOut;
+            console.log("From %s => %s", path[0], path[1]);
+            console.log("With %d => %d", _amountIn, _amountOutMin);
         } else {
             path = new address[](3);
             path[0] = _tokenIn;
             path[1] = WETHaddress;
             path[2] = _tokenOut;
+            console.log(path[0]);
+            console.log(path[1]);
+            console.log(path[2]);
         }
         //then we will call swapExactTokensForTokens
         //for the deadline we will pass in block.timestamp
@@ -125,7 +156,7 @@ contract Stacker is Ownable {
         address _tokenIn,
         address _tokenOut,
         uint256 _amountIn
-    ) external view returns (uint256) {
+    ) public view returns (uint256) {
         //path is an array of addresses.
         //this path array will have 3 addresses [tokenIn, WETHaddress, tokenOut]
         //the if statement below takes into account if token in or token out is WETHaddress.  then the path is only 2 addresses
