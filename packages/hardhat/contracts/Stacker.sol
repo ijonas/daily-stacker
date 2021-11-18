@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -126,16 +126,13 @@ contract Stacker is Ownable {
             path = new address[](2);
             path[0] = _tokenIn;
             path[1] = _tokenOut;
-            console.log("From %s => %s", path[0], path[1]);
-            console.log("With %d => %d", _amountIn, _amountOutMin);
+            // console.log("From %s => %s", path[0], path[1]);
+            // console.log("With %d => %d", _amountIn, _amountOutMin);
         } else {
             path = new address[](3);
             path[0] = _tokenIn;
             path[1] = WETHaddress;
             path[2] = _tokenOut;
-            console.log(path[0]);
-            console.log(path[1]);
-            console.log(path[2]);
         }
         //then we will call swapExactTokensForTokens
         //for the deadline we will pass in block.timestamp

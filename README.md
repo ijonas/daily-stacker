@@ -59,3 +59,16 @@ I'm not finished the MVP yet. Its still in developement until the Hackathon subm
 
 Daily Stacker was born as part of the [Chainlink Fall 2021 Hackathon](https://chain.link/hackathon) where it was entered as a Solo Project.
 
+## Reference
+
+### Kovan Token Addresses
+
+Tokens
+* UNI  - 0x1f9840a85d5af5bf1d1762f925bdaddc4201f984
+* DAI  - 0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
+* WETH - 0xd0a1e359811322d97991e03f863a0c30c2cf029c
+* LINK - 0xa36085F69e2889c224210F603D836748e7dC0088
+
+Uniswap v2 Router - 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D 
+
+Toptip: Always send WETH to the Staker contract instead of ETH.
