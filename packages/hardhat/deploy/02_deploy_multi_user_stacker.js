@@ -6,11 +6,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const fakeDAI = await deploy("FakeDAI", { from: deployer, log: true });
-  const fakeANT = await deploy("FakeANT", { from: deployer, log: true });
+  const fakeUniswapV2Router = await ethers.getContract("FakeUniswapV2Router", deployer);
   const fakeETH = await deploy("FakeETH", { from: deployer, log: true });
-  const fakeLINK = await deploy("FakeLINK", { from: deployer, log: true });
-  const fakeUniswapV2Router = await deploy("FakeUniswapV2Router", { from: deployer, args: [], log: true });
+
+  await deploy("MultiUserStacker", {
+    // Learn more about args here: https://www.npmjs.com/package/hardhat-deploy#deploymentsdeploy
+    from: deployer,
+    args: [fakeUniswapV2Router.address, fakeETH.address],
+    log: true,
+  });
 
   /*
     // Getting a previously deployed contract
@@ -48,4 +52,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
   */
 };
-module.exports.tags = ["FakeUniswapV2Router"];
+module.exports.tags = ["Stacker"];
