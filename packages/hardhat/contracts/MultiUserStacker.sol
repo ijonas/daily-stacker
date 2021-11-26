@@ -95,6 +95,11 @@ contract MultiUserStacker is Ownable {
         if (userTokenBalances[_to].daysRemaining <= 1) {
             stakeSlice = userTokenBalances[_to].balance;
         } else {
+            console.log(
+                "Balance %d DaysRemaining %d",
+                userTokenBalances[_to].balance,
+                userTokenBalances[_to].daysRemaining
+            );
             stakeSlice = SafeMath.div(
                 userTokenBalances[_to].balance,
                 userTokenBalances[_to].daysRemaining
@@ -106,26 +111,30 @@ contract MultiUserStacker is Ownable {
         for (uint8 i = 0; i < userPortfolios[_to].length; i++) {
             // figure out the percentage of today's ETH slice
             // amountIn = today's ETH slice * token share
-            uint256 amountIn = SafeMath.mul(
-                SafeMath.div(stakeSlice, 100),
-                userPortfolios[_to][i].percentage
-            );
+            if (userPortfolios[_to][i].percentage > 0) {
+                uint256 amountIn = SafeMath.mul(
+                    SafeMath.div(stakeSlice, 100),
+                    userPortfolios[_to][i].percentage
+                );
 
-            // get the token's amountOut for amountIn
-            uint256 amountOut = getAmountOutMin(
-                userTokenBalances[_to].token,
-                userPortfolios[_to][i].token,
-                amountIn
-            );
+                // get the token's amountOut for amountIn
+                uint256 amountOut = getAmountOutMin(
+                    userTokenBalances[_to].token,
+                    userPortfolios[_to][i].token,
+                    amountIn
+                );
 
-            // swap(WETH, token, amountIn, amountOut, sender wallet )
-            swap(
-                userTokenBalances[_to].token,
-                userPortfolios[_to][i].token,
-                amountIn,
-                amountOut,
-                _to
-            );
+                console.log("Slicing %d from %d", amountIn, stakeSlice);
+
+                // swap(WETH, token, amountIn, amountOut, sender wallet )
+                swap(
+                    userTokenBalances[_to].token,
+                    userPortfolios[_to][i].token,
+                    amountIn,
+                    amountOut,
+                    _to
+                );
+            }
         }
         if (userTokenBalances[_to].daysRemaining > 0) {
             userTokenBalances[_to].daysRemaining =

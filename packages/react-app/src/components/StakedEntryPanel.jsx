@@ -22,7 +22,6 @@ export default class StakedEntryPanel extends React.Component {
                 <Input value={this.state.balance} type="number"
                     onChange={e => { this.setState({ balance: parseFloat(e.target.value) }) }}
                 />
-                <span style={{ fontSize: 24, paddingTop: 0 }}>{this.state.balance}</span>
                 <h2 style={{ paddingTop: 20 }}>Over how many days?</h2>
                 <Input value={this.state.daysRemaining} type="number"
                     onChange={e => { this.setState({ daysRemaining: parseInt(e.target.value, 10) }) }}

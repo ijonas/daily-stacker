@@ -6,15 +6,23 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  // const fakeUniswapV2Router = await ethers.getContract("FakeUniswapV2Router", deployer);
-
   const mainUserAddress = '0xfad4467FdFa92819da18C365FC967241650185f5';
-  console.log(mainUserAddress);
+  // const FakeDAI = await ethers.getContract("FakeDAI", deployer);
+  // await (await FakeDAI.transfer(mainUserAddress, ethers.BigNumber.from("100000000000000000000"))).wait();
 
-  const FakeDAI = await ethers.getContract("FakeDAI", deployer);
+  // const fakeUniswapV2Router = await ethers.getContract("FakeUniswapV2Router", deployer);
+  // console.log(`UNISWAP ROUTER ADDRESS: ${fakeUniswapV2Router.address}`)
+  // const FakeETH = await ethers.getContract("FakeETH", deployer);
+  // await (await FakeETH.transfer(fakeUniswapV2Router.address, ethers.utils.parseEther("1000"))).wait();
+  // console.log("UNISWAP ROUTER ETH BALANCE")
+  // console.log((await FakeETH.balanceOf(fakeUniswapV2Router.address)).toString());
+  // const FakeLINK = await ethers.getContract("FakeLINK", deployer);
+  // await (await FakeLINK.transfer(fakeUniswapV2Router.address, ethers.BigNumber.from("1000000000000000000000"))).wait();
+  // console.log("UNISWAP ROUTER LINK BALANCE")
+  // console.log((await FakeLINK.balanceOf(fakeUniswapV2Router.address)).toString());
+  // const FakeANT = await ethers.getContract("FakeANT", deployer);
+  // await (await FakeANT.transfer(fakeUniswapV2Router.address, ethers.BigNumber.from("1000000000000000000000"))).wait();
 
-  const tx1 = await FakeDAI.transfer(mainUserAddress, ethers.BigNumber.from("100000000000000000000")) // 100
-  await tx1.wait()
 
   // await deploy("MultiUserStacker", {
   //     // Learn more about args here: https://www.npmjs.com/package/hardhat-deploy#deploymentsdeploy

@@ -168,7 +168,13 @@ contract FakeUniswapV2Router is IUniswapV2Router02 {
         uint256 deadline
     ) external override returns (uint256[] memory amounts) {
         IERC20Metadata tokenToPurchase = IERC20Metadata(path[path.length - 1]);
-        tokenToPurchase.transfer(to, amountOutMin);
+        console.log(
+            "Transferring %d from %s to %s",
+            amountOutMin,
+            msg.sender,
+            to
+        );
+        tokenToPurchase.transferFrom(address(this), to, amountOutMin);
         uint256[] memory _amounts;
         amounts = _amounts;
         return amounts;
@@ -264,7 +270,7 @@ contract FakeUniswapV2Router is IUniswapV2Router02 {
     {
         uint256[] memory _amounts = new uint256[](2);
         _amounts[0] = amountIn;
-        _amounts[1] = 2206 * amountIn;
+        _amounts[1] = 2 * amountIn;
         amounts = _amounts;
         return amounts;
     }

@@ -58,7 +58,7 @@ export default class PortfolioEntryPanel extends React.Component {
 
         return (
 
-            <Col xs={{ span: 5, offset: 1 }} lg={{ span: 6, offset: 2 }} justify="center">
+            <Col span={8} justify="center">
                 <h1>Your Portfolio</h1>
 
                 {portfolioEntryRows}
