@@ -70,5 +70,6 @@ Tokens
 * LINK - 0xa36085F69e2889c224210F603D836748e7dC0088
 
 Uniswap v2 Router - 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D 
+Sushiswap v2 Router - 0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506
 
 Toptip: Always send WETH to the Staker contract instead of ETH.

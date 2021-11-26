@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -42,6 +42,14 @@ contract MultiUserStacker is Ownable {
         uniswapV2Router = IUniswapV2Router02(_uniswap_v2_router);
         WETHaddress = _wethAddress;
         uniswapV2RouterAddress = _uniswap_v2_router;
+    }
+
+    function noPortfolioShares(address _tokenHolder)
+        public
+        view
+        returns (uint256 noShares)
+    {
+        noShares = userPortfolios[_tokenHolder].length;
     }
 
     function setStake(

@@ -7,6 +7,26 @@ export const ETHERSCAN_KEY = "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 // BLOCKNATIVE ID FOR Notify.js:
 export const BLOCKNATIVE_DAPPID = "0b58206a-f3c0-4701-a62f-73c7243e8c77";
 
+export const TOKENS = {
+  kovan: {
+    weth: { address: '0xd0a1e359811322d97991e03f863a0c30c2cf029c', name: 'Wrapped ETH', ticker: 'WETH' },
+    dai: { address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa', name: 'Dai', ticker: 'DAI' },
+    link: { address: '0xa36085F69e2889c224210F603D836748e7dC0088', name: 'Chainlink', ticker: 'LINK' },
+    uni: { address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', name: 'Uniswap', ticker: 'UNI' },
+    bat: { address: '0x482dc9bb08111cb875109b075a40881e48ae02cd', name: 'Basic Attention Token', ticker: 'BAT' },
+    comp: { address: '0x61460874a7196d6a22d1ee4922473664b3e95270', name: 'Compound', ticker: 'COMP' },
+    mkr: { address: '0xaaf64bfcc32d0f15873a02163e7e500671a4ffcd', name: 'MakerDAO', ticker: 'MKR' },
+    usdc: { address: '0xb7a4f3e9097c08da09517b5ab877f7a917224ede', name: 'USD Coin', ticker: 'USDC' },
+    wbtc: { address: '0xd3a691c852cdb01e281545a27064741f0b7f6825', name: 'Wrapped Bitcoin', ticker: 'WBTC' }
+  },
+  localhost: {
+    weth: { address: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0', name: 'Wrapped ETH', ticker: 'WETH' },
+    dai: { address: '0x5FbDB2315678afecb367f032d93F642f64180aa3', name: 'Dai', ticker: 'DAI' },
+    link: { address: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9', name: 'Chainlink', ticker: 'LINK' },
+    ant: { address: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512', name: 'Ant', ticker: 'ANT' }
+  }
+}
+
 export const NETWORKS = {
   localhost: {
     name: "localhost",
