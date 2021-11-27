@@ -20,7 +20,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   await deploy("MultiUserStacker", {
     // Learn more about args here: https://www.npmjs.com/package/hardhat-deploy#deploymentsdeploy
     from: deployer,
-    args: ["0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", "0xd0a1e359811322d97991e03f863a0c30c2cf029c"],
+    args: ["0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", "0xd0a1e359811322d97991e03f863a0c30c2cf029c", 86400],
     log: true,
   });
 
