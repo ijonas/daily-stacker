@@ -14,12 +14,11 @@ Daily Stacker first came to life as a [Raspberry Pi project called SatStacker](h
 
 Part of the problem to solve had to include to be the management of private keys or API keys and I don't want to be responsible for other people's keys. The combination of EVM smart contracts, L2 chains, Chainlink, and gas cost-optimised DEXes such as SushiSwap + Bentobox offered a solution.
 
-
 ## What it does
 
 Here's how Daily Stacker works:
 
-1. connect your wallet and once a month transfer some ETH to Daily Stacker
+1. connect your wallet and once a month transfer some DAI to Daily Stacker, say 300 DAI.
 2. setup a portfolio, e.g. 50% Wrapped Bitcoin, 35% LINK, 15% BAT
 3. for the next 30 days Daily Stacker will buy slivers of the tokens according to the ratios in your portfolio
 4. all purchases are automatically sent to your wallet
@@ -33,6 +32,8 @@ Bill of materials:
 * Chainlink Keepers
 * SushiSwap 
 * BentoBox
+* Polygon
+* Ramp Network for fiat onramp
 
 ## Challenges I ran into
 
@@ -41,35 +42,51 @@ Bill of materials:
 
 ## Accomplishments that we're proud of
 
-I'm not finished the MVP yet. Its still in developement until the Hackathon submission date.
+Learning Solidity and getting a least a fair bit along the way to project completion.
+At the ripe old age of almost 50, joined my first hackathon. Old dog, new tricks.
 
 ## What we learned
 
 * EVM platforms are massive environment to innovate on.
-* Solidity itself is reasonably easy to learn, however running smart contracts on the blockchain is hard.
+* Solidity itself is reasonably easy to learn, however running smart contracts on the blockchain is hard. The ERC-20 Approval pattern is often a stumbling block.
+* Team up with people. You can't do it all.
 
 ## What's next for Daily Stacker
 
-* Deploy to Polygon and other L2s for cheaper gas costs but that depends on the availability of Chainlink Keepers support on those chains.
+* Deploy to Polygon and other L2s for cheaper gas costs but that depends on the availability of Chainlink Keepers support on those chains. Update: Keepers are now available on Polygon.
 * I'd like integrate something like [ramp.network](https://ramp.network/) to provide a fiat onramp straight into Daily Stacker
 * Improve the UI.
-* Integrate yield-generating protocols that will earn a yield whilst the funds are under management.
+* Develop a mechanism whereby the protocol buys the LINK token to support itself, paid for by the users of the protocol.
+* Integrate yield-generating protocols that will earn a yield whilst the funds are staked but not spent.
 
 ## Note
 
 Daily Stacker was born as part of the [Chainlink Fall 2021 Hackathon](https://chain.link/hackathon) where it was entered as a Solo Project.
 
-## Reference
+## To Do
 
-### Kovan Token Addresses
+Daily Stacker is currently not a working piece of software. Unfortunately it is not demonstrable.
 
-Tokens
-* UNI  - 0x1f9840a85d5af5bf1d1762f925bdaddc4201f984
-* DAI  - 0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
-* WETH - 0xd0a1e359811322d97991e03f863a0c30c2cf029c
-* LINK - 0xa36085F69e2889c224210F603D836748e7dC0088
+### Phase 1 - To get to MVP Demo
+- [ ] Implement Chainlink Keepers
+- [ ] Get working Dapp UI
+    - [ ] Fix Token Balances
+    - [ ] Improve layout and colours
 
-Uniswap v2 Router - 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D 
-Sushiswap v2 Router - 0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506
+I would've liked to have gotten here for the end of the Chainlink hackathon.
 
-Toptip: Always send WETH to the Staker contract instead of ETH.
+### Phase 2 - To get to Unaudited Beta on Testnet and into user's hands
+- [ ] Write more tests
+- [ ] Get working Dapp UI
+    - [ ] Add some branding & pizazz, roll it in glitter.
+    - [ ] Write UI tests.
+- [ ] Add Bentobox support to reduce gas costs
+- [ ] Write more tests
+- [ ] Move to Polygon Mumbai testnet
+
+### Phase 3 - Deploy to Polygon mainnet
+- [ ] Incorporate static analysis and security testing tools into test framework
+- [ ] Incorporate CI-server for testing and deployment
+- [ ] Get code audited
+- [ ] Fix audit issues
+- [ ] Deploy to Polygon mainnet
