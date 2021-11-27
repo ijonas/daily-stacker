@@ -6,27 +6,35 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "./keepers-v8/KeeperCompatible.sol";
 
+// A Portfio Share defines how big a percentage of a user's portfolio they want to spend on a specific token.
 struct PortfolioShare {
     uint8 percentage;
     address token;
 }
 
+// A Stake represents how much a user of the MultiUserStacker protocol wants to spend buying tokens over a given period.
+// For example:
+// token: DAI
+// balance: 300
+// daysRemaining: 30
+// would cause MultiUserStacker to spend 300 / 30 days = 10DAI per day buying tokens as defined by the User's portfolio
 struct Stake {
     address token;
     uint256 balance;
     uint8 daysRemaining;
 }
 
-contract MultiUserStacker is Ownable {
+contract MultiUserStacker is Ownable, KeeperCompatibleInterface {
+    // Used to perform token swaps when a user's portfolio is being bought daily.
     IUniswapV2Router02 internal uniswapV2Router;
-    address uniswapV2RouterAddress;
 
-    //address of WETH token.  This is needed because some times it is better to trade through WETH.
-    //you might get a better price using WETH.
-    //example trading from token A to WETH then WETH to token B might result in a better price
+    // Address of WETH token.  This is needed because some times it is better to trade through WETH.
+    // You might get a better price using WETH. Example trading from token A to WETH then WETH to token B might result in a better price.
     address WETHaddress;
 
+    // Contains a current list of approved token balances, i.e. For User A this contract is approved to spend x-amount of DAI over 'daysRemaining' days.
     mapping(address => Stake) public userTokenBalances;
     event SetStake(
         address indexed _from,
@@ -35,15 +43,28 @@ contract MultiUserStacker is Ownable {
         uint8 _daysRemaining
     );
 
+    // Contains the portfolios of every user on the protocol.
     mapping(address => PortfolioShare[]) public userPortfolios;
+    // Contains the list of users of the protocol.
     address[] public users;
 
-    constructor(address _uniswap_v2_router, address _wethAddress) {
+    // Stores time interval between individual runs of Chainlink Upkeep process, usually 1 day in production setting
+    uint256 public immutable updateInterval;
+    // Stores last time the Chainlink Upkeep process ran
+    uint256 public lastTimeStamp;
+
+    constructor(
+        address _uniswap_v2_router,
+        address _wethAddress,
+        uint256 _updateInterval
+    ) {
         uniswapV2Router = IUniswapV2Router02(_uniswap_v2_router);
         WETHaddress = _wethAddress;
-        uniswapV2RouterAddress = _uniswap_v2_router;
+        updateInterval = _updateInterval;
+        lastTimeStamp = block.timestamp;
     }
 
+    // Returns the number/length of list of Portfolio shares for a given user.
     function noPortfolioShares(address _tokenHolder)
         public
         view
@@ -52,6 +73,7 @@ contract MultiUserStacker is Ownable {
         noShares = userPortfolios[_tokenHolder].length;
     }
 
+    // Called by user to declare their stake.
     function setStake(
         address _token,
         uint256 _balance,
@@ -61,7 +83,7 @@ contract MultiUserStacker is Ownable {
         userTokenBalances[msg.sender] = Stake(_token, _balance, _daysRemaining);
     }
 
-    // Called by User when to setup their portfolio
+    // Called by user to setup their portfolio
     function setPortfolio(address[] memory _tokens, uint8[] memory _shares)
         public
     {
@@ -88,9 +110,18 @@ contract MultiUserStacker is Ownable {
         );
     }
 
+    function readyToBuy(address _buyer) internal view returns (bool) {
+        return
+            userTokenBalances[_buyer].daysRemaining <= 1 &&
+            userTokenBalances[_buyer].balance > 0;
+    }
+
+    // Main function called daily for each user of the protocol. Figures how much of the
+    // user's stake is going to be spent today buying tokens and then buys those tokens
+    // according to the percentages defined in the user's portfolio.
     function buyPortfolio(address _to) public {
-        // figure out how big a slice of ETH we're spending today
-        // today's ETH slice = eth balance / days remaining
+        // figure out how big a slice of DAI we're spending today
+        // today's DAI slice = dai balance / days remaining
         uint256 stakeSlice;
         if (userTokenBalances[_to].daysRemaining <= 1) {
             stakeSlice = userTokenBalances[_to].balance;
@@ -143,21 +174,20 @@ contract MultiUserStacker is Ownable {
         }
     }
 
-    //this swap function is used to trade from one token to another
+    //This swap function is used to trade from one token to another
     //the inputs are self explainatory
     //token in = the token address you want to trade out of
     //token out = the token address you want as the output of this trade
     //amount in = the amount of tokens you are sending in
     //amount out Min = the minimum amount of tokens you want out of the trade
     //to = the address you want the tokens to be sent to
-
     function swap(
         address _tokenIn,
         address _tokenOut,
         uint256 _amountIn,
         uint256 _amountOutMin,
         address _to
-    ) public {
+    ) internal {
         //first we need to transfer the amount in tokens from the msg.sender to this contract
         //this contract will have the amount of in tokens
         IERC20(_tokenIn).transferFrom(msg.sender, address(this), _amountIn);
@@ -194,14 +224,14 @@ contract MultiUserStacker is Ownable {
         );
     }
 
-    //this function will return the minimum amount from a swap
+    //This function will return the minimum amount from a swap
     //input the 3 parameters below and it will return the minimum amount out
     //this is needed for the swap function above
     function getAmountOutMin(
         address _tokenIn,
         address _tokenOut,
         uint256 _amountIn
-    ) public view returns (uint256) {
+    ) internal view returns (uint256) {
         //path is an array of addresses.
         //this path array will have 3 addresses [tokenIn, WETHaddress, tokenOut]
         //the if statement below takes into account if token in or token out is WETHaddress.  then the path is only 2 addresses
@@ -222,5 +252,35 @@ contract MultiUserStacker is Ownable {
             path
         );
         return amountOutMins[path.length - 1];
+    }
+
+    // Checks to see if a day has passed before we buy everyone's portfolio again using the performUpkeep function
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        external
+        view
+        override
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
+    {
+        upkeepNeeded = (block.timestamp - lastTimeStamp) > updateInterval;
+        // We don't use the checkData in this example. The checkData is defined when the Upkeep was registered.
+    }
+
+    // Iterates over the list of users, checking if they're able to buy, and then buys their daily portfolio.
+    function performUpkeep(
+        bytes calldata /* performData */
+    ) external override {
+        lastTimeStamp = block.timestamp;
+        for (uint256 i = 0; i < users.length; i++) {
+            address user = users[i];
+            if (readyToBuy(user)) {
+                buyPortfolio(user);
+            }
+        }
+        // We don't use the performData in this example. The performData is generated by the Keeper's call to your checkUpkeep function
     }
 }
