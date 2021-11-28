@@ -68,16 +68,15 @@ Daily Stacker was born as part of the [Chainlink Fall 2021 Hackathon](https://ch
 Daily Stacker is currently not a working piece of software. Unfortunately it is not demonstrable.
 
 ### Phase 1 - To get to MVP Demo
-- [ ] Implement Chainlink Keepers
+- [x] Implement Chainlink Keepers
 - [ ] Get working Dapp UI
-    - [ ] Fix Token Balances
-    - [ ] Improve layout and colours
-
-I would've liked to have gotten here for the end of the Chainlink hackathon.
+    - [x] Fix Token Balances
+    - [x] Improve layout and colours
 
 ### Phase 2 - To get to Unaudited Beta on Testnet and into user's hands
 - [ ] Write more tests
-- [ ] Get working Dapp UI
+- [ ] Improve Dapp UI
+    - [ ] Use tokenlists instead of a fixed list of tokens.
     - [ ] Add some branding & pizazz, roll it in glitter.
     - [ ] Write UI tests.
 - [ ] Add Bentobox support to reduce gas costs

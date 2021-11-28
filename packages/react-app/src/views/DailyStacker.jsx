@@ -11,7 +11,7 @@ const StakedPanel = (userTokenBalance, showStakeForm) => {
     return (
         <Col span={8} justify="center">
             <h1>Your Stake</h1>
-            <h2>Current DAI Balance</h2>
+            <h2>Current DAI Stake</h2>
             <span style={{ fontSize: 24, paddingTop: 0 }}>{userTokenBalance.balance}</span>
             <h2 style={{ paddingTop: 20 }}>Days Remaining</h2>
             <span style={{ fontSize: 24, paddingTop: 0 }}>{userTokenBalance.daysRemaining}</span>
@@ -109,6 +109,18 @@ const loadingPanel = () => (
     </Row>
 )
 
+const connectPanel = () => (
+    <Row justify="start">
+        <Col span={24} justify="center">
+            <h2>Please connect your wallet</h2>
+            <img src="Spin-1s-200px.svg"></img>
+            <h2>by hitting</h2>
+            <h2>the [Connect] button</h2>
+            <h2>in the top right.</h2>
+        </Col>
+    </Row>
+)
+
 export default class DailyStacker extends React.Component {
 
     constructor(props) {
@@ -119,6 +131,8 @@ export default class DailyStacker extends React.Component {
             showPortfolioForm: false,
             stackerLastTimestamp: undefined,
             stackerLastTimestampStr: undefined,
+            stackerNextTimestamp: undefined,
+            stackerNextTimestampStr: undefined,
             userTokenBalance: { token: "ABC", daysRemaining: 0, balance: 0 },
             tokenBalances: [],
             portfolioShares: [],
@@ -132,7 +146,9 @@ export default class DailyStacker extends React.Component {
             const lastTimestamp = await props.readContracts.MultiUserStacker.lastTimeStamp();
             const stackerLastTimestamp = new Date(lastTimestamp * 1000)
             const stackerLastTimestampStr = stackerLastTimestamp.toLocaleString();
-            this.setState({ stackerLastTimestamp, stackerLastTimestampStr })
+            const stackerNextTimestamp = new Date(lastTimestamp * 1000 + 60 * 10 * 1000)
+            const stackerNextTimestampStr = stackerNextTimestamp.toLocaleString();
+            this.setState({ stackerLastTimestamp, stackerLastTimestampStr, stackerNextTimestamp, stackerNextTimestampStr })
 
             props.readContracts.MultiUserStacker.userTokenBalances(props.address).then(stake => {
                 const balance = { balance: utils.formatUnits(stake.balance.toString()), daysRemaining: stake.daysRemaining, token: stake.token };
@@ -231,11 +247,11 @@ export default class DailyStacker extends React.Component {
                 <Col span={24}>
                     {threeColumnPanel}
                     <Row justify="center">
-                        <Col span={24} style={{ marginTop: 30 }}>
-                            <h3>Last Stacket At {this.state.stackerLastTimestampStr}</h3>
+                        <Col span={24} style={{ marginTop: 50 }}>
+                            <h3>Last Stacked At {this.state.stackerLastTimestampStr}</h3>
 
-                            <Button type="primary" style={{ marginTop: 8 }} onClick={async () => {
-                                const result = this.props.tx(this.props.writeContracts.MultiUserStacker.buyPortfolio(this.props.address), update => {
+                            <Button size="large" type="primary" style={{ marginTop: 8 }} onClick={async () => {
+                                const result = this.props.tx(this.props.writeContracts.MultiUserStacker.performUpkeep(0x63), update => {
                                     console.log("📡 Transaction Update:", update);
                                     if (update && (update.status === "confirmed" || update.status === 1)) {
                                         console.log(" 🍾 Transaction " + update.hash + " finished!");
@@ -255,6 +271,8 @@ export default class DailyStacker extends React.Component {
                             }}>
                                 Stack Now!
                             </Button>
+
+                            <div style={{ display: "block", marginTop: 30 }}>Or wait until {this.state.stackerNextTimestampStr}<br /> when Daily Stacker will automatically buy your portfolio tokens.</div>
                         </Col>
                     </Row>
                 </Col>
@@ -262,7 +280,14 @@ export default class DailyStacker extends React.Component {
         );
 
 
-        const centralPanel = this.state.onLoad ? loadingPanel() : mainContainer
+        let centralPanel = undefined;
+        if (this.props.web3Modal && !this.props.web3Modal.cachedProvider) {
+            centralPanel = connectPanel();
+        } else if (this.state.onLoad) {
+            centralPanel = loadingPanel();
+        } else {
+            centralPanel = mainContainer;
+        }
 
         return (
             <div style={{ paddingTop: 100 }}>

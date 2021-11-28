@@ -5,7 +5,7 @@ import React from "react";
 
 export default function Header() {
   return (
-    <a href="https://github.com/austintgriffith/scaffold-eth" target="_blank" rel="noopener noreferrer">
+    <a href="https://github.com/ijonas/daily-stacker" target="_blank" rel="noopener noreferrer">
       <PageHeader
         title="Daily Stacker"
         subTitle="A little dapp for waking up to a little bit more crypto everyday."

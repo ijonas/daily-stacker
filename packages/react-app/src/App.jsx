@@ -52,7 +52,7 @@ const { ethers } = require("ethers");
 const targetNetwork = NETWORKS.kovan; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
-const DEBUG = true;
+const DEBUG = false;
 const NETWORKCHECK = true;
 
 // 🛰 providers
@@ -431,7 +431,6 @@ function App(props) {
     ) :
     (<span></span>);
 
-
   return (
     <div className="App">
       <Header />
@@ -447,6 +446,7 @@ function App(props) {
         readContracts={readContracts}
         mainnetContracts={mainnetContracts}
         mainnetWriteContracts={mainnetWriteContracts}
+        web3Modal={web3Modal}
       />
 
       {contractPanel}
