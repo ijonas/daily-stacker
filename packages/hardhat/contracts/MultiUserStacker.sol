@@ -167,10 +167,15 @@ contract MultiUserStacker is Ownable, KeeperCompatibleInterface {
                 );
             }
         }
+        // subtract today's spend from the user's stake.
         if (userTokenBalances[_to].daysRemaining > 0) {
             userTokenBalances[_to].daysRemaining =
                 userTokenBalances[_to].daysRemaining -
                 1;
+            userTokenBalances[_to].balance =
+                userTokenBalances[_to].balance -
+                stakeSlice;
+            lastTimeStamp = block.timestamp;
         }
     }
 
