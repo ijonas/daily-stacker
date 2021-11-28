@@ -46,6 +46,7 @@ export const NETWORKS = {
     name: "kovan",
     color: "#7003DD",
     chainId: 42,
+    price: 4200,
     rpcUrl: `https://kovan.infura.io/v3/${INFURA_ID}`,
     blockExplorer: "https://kovan.etherscan.io/",
     faucet: "https://gitter.im/kovan-testnet/faucet", // https://faucet.kovan.network/
