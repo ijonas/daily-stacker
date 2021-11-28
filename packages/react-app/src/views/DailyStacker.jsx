@@ -1,14 +1,15 @@
 import { SyncOutlined } from "@ant-design/icons";
 import { ethers, utils } from "ethers";
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch, Col, Row } from "antd";
+import { Button, Avatar, Col, Row } from "antd";
 import React, { useState } from "react";
-import { Address, Balance, Events, TokenBalance, StakedEntryPanel, PortfolioEntryPanel } from "../components";
+import { StakedEntryPanel, PortfolioEntryPanel } from "../components";
 import { TOKENS } from "../constants";
 import { render } from "react-dom";
+import { useContractReader } from "eth-hooks";
 
 const StakedPanel = (userTokenBalance, showStakeForm) => {
     return (
-        <Col xs={{ span: 5, offset: 1 }} lg={{ span: 6, offset: 2 }} justify="center">
+        <Col span={8} justify="center">
             <h1>Your Stake</h1>
             <h2>Current DAI Balance</h2>
             <span style={{ fontSize: 24, paddingTop: 0 }}>{userTokenBalance.balance}</span>
@@ -29,8 +30,9 @@ const StakedPanel = (userTokenBalance, showStakeForm) => {
 const portfolioRow = (percentage, tokenDefn) => {
     return (
         <Row key={`tbr-${tokenDefn.address}`}>
-            <Col span={12} align="end" style={{ fontSize: 24 }}>{percentage}%</Col>
-            <Col span={12} align="start" style={{ fontSize: 24 }}>{tokenDefn.ticker}</Col>
+            <Col span={11} align="end" style={{ fontSize: 24 }}>{percentage}%</Col>
+            <Col span={1} align="end" style={{ fontSize: 24 }}>&nbsp;</Col>
+            <Col span={12} align="start" style={{ fontSize: 24 }}><Avatar src={`${tokenDefn.ticker.toLowerCase()}.svg`} />{tokenDefn.ticker}</Col>
         </Row>
     );
 }
@@ -47,7 +49,7 @@ const PortfolioPanel = (portfolioShares, tokenBalances, showPorfolioForm) => {
 
     return (
 
-        <Col xs={{ span: 5, offset: 1 }} lg={{ span: 6, offset: 2 }} justify="center">
+        <Col span={8} justify="center">
             <h1>Your Portfolio</h1>
             {portfolioRows}
             <div style={{ display: "block" }}>
@@ -78,7 +80,8 @@ const tokenBalanceRow = (tokenDefn) => {
     return (
         <Row key={`tbr-${tokenDefn.address}`}>
             <Col span={12} align="end" style={{ fontSize: 24 }}>{ethers.utils.formatUnits(tokenDefn.balance, tokenDefn.decimals)}</Col>
-            <Col span={12} align="start" style={{ fontSize: 24 }}>{tokenDefn.ticker}</Col>
+            <Col span={1} align="end" style={{ fontSize: 24 }}>&nbsp;</Col>
+            <Col span={11} align="start" style={{ fontSize: 24 }}><Avatar src={`${tokenDefn.ticker.toLowerCase()}.svg`} />{tokenDefn.ticker}</Col>
         </Row>
     );
 }
@@ -86,9 +89,10 @@ const tokenBalanceRow = (tokenDefn) => {
 const prepareAllPortfolioShares = (existingPortfolioShares, tokenDefinitions) => {
     const allPortfolioShares = [];
     for (const tokenDefn of tokenDefinitions) {
-        const existingPortfolioShareIndex = existingPortfolioShares.findIndex(share => tokenDefn.address === share.token)
+        const existingPortfolioShareIndex = existingPortfolioShares.findIndex(share => tokenDefn.address.toLowerCase() === share.token.toLowerCase())
         if (existingPortfolioShareIndex >= 0) {
-            allPortfolioShares.push(existingPortfolioShares[existingPortfolioShareIndex])
+            const ps = existingPortfolioShares[existingPortfolioShareIndex];
+            allPortfolioShares.push({ token: tokenDefn.address, percentage: ps.percentage })
         } else {
             allPortfolioShares.push({ token: tokenDefn.address, percentage: 0 })
         }
@@ -96,15 +100,16 @@ const prepareAllPortfolioShares = (existingPortfolioShares, tokenDefinitions) =>
     return allPortfolioShares
 }
 
+const loadingPanel = () => (
+    <Row justify="start">
+        <Col span={24} justify="center">
+            <h2>One moment please...</h2>
+            <img src="Spin-1s-200px.svg"></img>
+        </Col>
+    </Row>
+)
+
 export default class DailyStacker extends React.Component {
-    // address: props.address,
-    // mainnetProvider: props.mainnetProvider,
-    // localProvider: props.localProvider,
-    // yourLocalBalance: props.yourLocalBalance,
-    // price: props.price,
-    // tx: props.tx,
-    // readContracts: props.readContracts,
-    // writeContracts: props.writeContracts,
 
     constructor(props) {
         super(props);
@@ -112,26 +117,41 @@ export default class DailyStacker extends React.Component {
             onLoad: true,
             showStakeForm: false,
             showPortfolioForm: false,
+            stackerLastTimestamp: undefined,
+            stackerLastTimestampStr: undefined,
             userTokenBalance: { token: "ABC", daysRemaining: 0, balance: 0 },
             tokenBalances: [],
             portfolioShares: [],
         };
     }
 
-    loadAppData(props) {
-        if (props.readContracts && props.readContracts.MultiUserStacker) {
-            console.log(`-------------------------> Initialising Daily Stacker at ${(new Date).toLocaleString()}`);
+    async loadAppData(props) {
+        if (props.readContracts && props.readContracts.MultiUserStacker && this.state.onLoad && this.props.injectedProvider) {
+            console.log(`-------------------------> Initialising Daily Stacker at ${(new Date).toLocaleString()} for ${props.address}`);
+
+            const lastTimestamp = await props.readContracts.MultiUserStacker.lastTimeStamp();
+            const stackerLastTimestamp = new Date(lastTimestamp * 1000)
+            const stackerLastTimestampStr = stackerLastTimestamp.toLocaleString();
+            this.setState({ stackerLastTimestamp, stackerLastTimestampStr })
+
             props.readContracts.MultiUserStacker.userTokenBalances(props.address).then(stake => {
                 const balance = { balance: utils.formatUnits(stake.balance.toString()), daysRemaining: stake.daysRemaining, token: stake.token };
                 this.setState({ userTokenBalance: balance })
             });
 
-            const NETWORK = "localhost";
+            const NETWORK = "kovan";
             const provider = NETWORK === "localhost" ? props.localProvider : props.mainnetProvider;
 
+            // const myMainnetDAIBalance = await props.writeContracts.DAI.balanceOf(props.address);
+            // console.log("DAI BALANCE", myMainnetDAIBalance)
+
             const tokenBalancePromises = [];
-            for (const token of Object.keys(TOKENS[NETWORK])) {
+            for (const token of Object.keys(TOKENS[NETWORK]).filter(k => k != 'stake')) {
                 const tokenDefn = TOKENS[NETWORK][token];
+
+
+
+
                 const tokenBalancePromise = getTokenBalance(provider, tokenDefn, props.address);
                 tokenBalancePromises.push(tokenBalancePromise)
             }
@@ -140,6 +160,7 @@ export default class DailyStacker extends React.Component {
                 this.setState({ tokenBalances })
 
                 props.readContracts.MultiUserStacker.noPortfolioShares(props.address).then(sharesCount => {
+                    console.log(`portfolio shares count ${sharesCount}`)
                     if (sharesCount > 0) {
                         const promisesPortfolioShare = []
                         for (let i = 0; i < sharesCount; i++) {
@@ -147,13 +168,12 @@ export default class DailyStacker extends React.Component {
                             promisesPortfolioShare.push(promisePortfolioShare)
                         }
                         Promise.all(promisesPortfolioShare).then(portfolioShares => {
-                            console.log("==============================================<>")
+                            console.log(`portfolio shares`, { portfolioShares })
                             const allSharses = prepareAllPortfolioShares(portfolioShares, tokenBalances)
-                            console.log(allSharses)
+                            console.log("ALL SHARES -> ", allSharses)
                             this.setState({ portfolioShares: allSharses, onLoad: false })
                         })
                     } else {
-                        console.log("==============================================<no portfolio>")
                         const allSharses = prepareAllPortfolioShares([], tokenBalances)
                         console.log(allSharses)
                         this.setState({ portfolioShares: allSharses, onLoad: false })
@@ -168,26 +188,18 @@ export default class DailyStacker extends React.Component {
 
     }
 
+    componentDidMount() {
+        this.loadAppData(this.props);
+    }
+
     componentDidUpdate(prevProps, prevState) {
-        console.log("----> componentDidUpdate", { prevProps, prevState })
-        if (this.state.onLoad && this.props.readContracts && this.props.readContracts.MultiUserStacker) {
+        const addressChange = (!!prevProps.address && prevProps.address != this.props.address)
+        if (this.props.readContracts && this.props.readContracts.MultiUserStacker && addressChange) {
             this.loadAppData(this.props)
         }
     }
 
-    shouldComponentUpdate(nextProps, nextState) {
-        console.log("----> shouldComponentUpdate", { nextProps, nextState })
-        return !!nextProps.readContracts.MultiUserStacker
-    }
-
-    componentDidMount() {
-        console.log("----> componentDidMount")
-    }
-
-
-
     render() {
-
         const stakedPanel = (this.state.userTokenBalance.daysRemaining > 0 && !this.state.showStakeForm) ?
             StakedPanel(this.state.userTokenBalance, () => { this.setState({ showStakeForm: true }) }) :
             (<StakedEntryPanel {...this.props} hideStakeForm={() => this.setState({ showStakeForm: false })} userTokenBalance={this.state.userTokenBalance} />);
@@ -200,18 +212,10 @@ export default class DailyStacker extends React.Component {
         const tokenBalanceRows = this.state.tokenBalances.map(tokenBalance => tokenBalanceRow(tokenBalance));
 
         const tokenBalancesPanel = (
-            <Col xs={{ span: 5, offset: 1 }} lg={{ span: 6, offset: 2 }} justify="center">
+            <Col span={8} justify="center">
                 <h1>Your Token Balances</h1>
                 {tokenBalanceRows}
             </Col>
-        );
-
-        const loadingPanel = (
-            <Row justify="start">
-                <Col span={8} justify="center">
-                    <h1>Loading...</h1>
-                </Col>
-            </Row>
         );
 
         const threeColumnPanel = (
@@ -222,7 +226,43 @@ export default class DailyStacker extends React.Component {
             </Row>
         );
 
-        const centralPanel = this.state.onLoad ? loadingPanel : threeColumnPanel
+        const mainContainer = (
+            <Row justify="start">
+                <Col span={24}>
+                    {threeColumnPanel}
+                    <Row justify="center">
+                        <Col span={24} style={{ marginTop: 30 }}>
+                            <h3>Last Stacket At {this.state.stackerLastTimestampStr}</h3>
+
+                            <Button type="primary" style={{ marginTop: 8 }} onClick={async () => {
+                                const result = this.props.tx(this.props.writeContracts.MultiUserStacker.buyPortfolio(this.props.address), update => {
+                                    console.log("📡 Transaction Update:", update);
+                                    if (update && (update.status === "confirmed" || update.status === 1)) {
+                                        console.log(" 🍾 Transaction " + update.hash + " finished!");
+                                        console.log(
+                                            " ⛽️ " +
+                                            update.gasUsed +
+                                            "/" +
+                                            (update.gasLimit || update.gas) +
+                                            " @ " +
+                                            parseFloat(update.gasPrice) / 1000000000 +
+                                            " gwei",
+                                        );
+                                    }
+                                });
+                                console.log("awaiting metamask/web3 confirm result...", result);
+                                console.log(await result);
+                            }}>
+                                Stack Now!
+                            </Button>
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        );
+
+
+        const centralPanel = this.state.onLoad ? loadingPanel() : mainContainer
 
         return (
             <div style={{ paddingTop: 100 }}>
@@ -231,7 +271,8 @@ export default class DailyStacker extends React.Component {
                         {centralPanel}
                     </Col>
                 </Row>
-            </div>
+
+            </div >
         );
     }
 }

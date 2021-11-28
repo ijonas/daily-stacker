@@ -35,25 +35,27 @@ export default class StakedEntryPanel extends React.Component {
                         const stakeAmount = utils.parseEther("" + this.state.balance);
                         const daysRemaining = parseInt(this.state.daysRemaining, 10);
 
-                        const result1 = this.props.tx(this.props.writeContracts.FakeDAI.approve(this.props.readContracts.MultiUserStacker.address, stakeAmount), update => {
-                            console.log("📡 Transaction Update:", update);
-                            if (update && (update.status === "confirmed" || update.status === 1)) {
-                                console.log(" 🍾 Transaction " + update.hash + " finished!");
-                                console.log(
-                                    " ⛽️ " +
-                                    update.gasUsed +
-                                    "/" +
-                                    (update.gasLimit || update.gas) +
-                                    " @ " +
-                                    parseFloat(update.gasPrice) / 1000000000 +
-                                    " gwei",
-                                );
-                            }
-                        });
+                        const result1 = this.props.tx(
+                            this.props.mainnetWriteContracts.DAI.approve(this.props.readContracts.MultiUserStacker.address, stakeAmount),
+                            update => {
+                                console.log("📡 Transaction Update:", update);
+                                if (update && (update.status === "confirmed" || update.status === 1)) {
+                                    console.log(" 🍾 Transaction " + update.hash + " finished!");
+                                    console.log(
+                                        " ⛽️ " +
+                                        update.gasUsed +
+                                        "/" +
+                                        (update.gasLimit || update.gas) +
+                                        " @ " +
+                                        parseFloat(update.gasPrice) / 1000000000 +
+                                        " gwei",
+                                    );
+                                }
+                            });
                         console.log("awaiting metamask/web3 confirm result...", result1);
                         console.log(await result1);
 
-                        const result2 = this.props.tx(this.props.writeContracts.MultiUserStacker.setStake(this.props.readContracts.FakeDAI.address, stakeAmount, daysRemaining), update => {
+                        const result2 = this.props.tx(this.props.writeContracts.MultiUserStacker.setStake(this.props.mainnetWriteContracts.DAI.address, stakeAmount, daysRemaining), update => {
                             console.log("📡 Transaction Update:", update);
                             if (update && (update.status === "confirmed" || update.status === 1)) {
                                 console.log(" 🍾 Transaction " + update.hash + " finished!");
