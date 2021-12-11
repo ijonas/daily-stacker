@@ -199,7 +199,7 @@ export default class DailyStacker extends React.Component {
 
 
         } else {
-            console.error('MultiUserStacker not loaded')
+            console.error('MultiUserStacker not loaded', { contract: props?.readContracts?.MultiUserStacker, onLoad: this.state.onLoad, provider: this.props.injectedProvider })
         }
 
     }
@@ -210,7 +210,9 @@ export default class DailyStacker extends React.Component {
 
     componentDidUpdate(prevProps, prevState) {
         const addressChange = (!!prevProps.address && prevProps.address != this.props.address)
-        if (this.props.readContracts && this.props.readContracts.MultiUserStacker && addressChange) {
+        const multiStackerChange = (this.props.readContracts && this.props.readContracts.MultiUserStacker && prevProps.readContracts && !prevProps.readContracts.MultiUserStacker)
+
+        if (addressChange || multiStackerChange) {
             this.loadAppData(this.props)
         }
     }
