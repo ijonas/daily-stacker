@@ -65,8 +65,7 @@ export default class PortfolioEntryPanel extends React.Component {
 
                 <div style={{ display: "block" }}>
                     <Button type="primary" style={{ marginTop: 8 }}
-                        onClick={async () => {
-
+                        onClick={() => {
                             const tokenAddresses = [];
                             const percentages = [];
                             for (const entry of this.state.portfolioEntries) {
@@ -74,27 +73,7 @@ export default class PortfolioEntryPanel extends React.Component {
                                 percentages.push(entry.percentage);
                             }
 
-                            const result = this.props.tx(this.props.writeContracts.MultiUserStacker.setPortfolio(tokenAddresses, percentages), update => {
-                                console.log("📡 Transaction Update:", update);
-                                if (update && (update.status === "confirmed" || update.status === 1)) {
-                                    console.log(" 🍾 Transaction " + update.hash + " finished!");
-                                    console.log(
-                                        " ⛽️ " +
-                                        update.gasUsed +
-                                        "/" +
-                                        (update.gasLimit || update.gas) +
-                                        " @ " +
-                                        parseFloat(update.gasPrice) / 1000000000 +
-                                        " gwei",
-                                    );
-                                }
-                            });
-                            console.log("awaiting metamask/web3 confirm result...", result);
-                            console.log(await result);
-
-
-                            this.props.hidePortfolioEntryForm();
-
+                            this.props.updateUserPortfolio(tokenAddresses, percentages);
                         }}
                     >
                         Set Portfolio!

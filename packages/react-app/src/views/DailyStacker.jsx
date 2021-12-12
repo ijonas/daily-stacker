@@ -109,6 +109,14 @@ const loadingPanel = () => (
     </Row>
 )
 
+const loadingColumn = () => (
+    <Col span={8} justify="center">
+        <h2>One moment please...</h2>
+        <img src="Spin-1s-200px.svg"></img>
+    </Col>
+)
+
+
 const connectPanel = () => (
     <Row justify="start">
         <Col span={24} justify="center">
@@ -136,7 +144,50 @@ export default class DailyStacker extends React.Component {
             userTokenBalance: { token: "ABC", daysRemaining: 0, balance: 0 },
             tokenBalances: [],
             portfolioShares: [],
+            portfolioLoading: false,
+            stakeLoading: false,
+            tokenBalancesLoading: false,
         };
+        this.updateUserPortfolio = this.updateUserPortfolio.bind(this)
+        this.updateUserStake = this.updateUserStake.bind(this)
+    }
+
+    async reloadPortfolio(props, tokenBalances) {
+        const sharesCount = await props.readContracts.MultiUserStacker.noPortfolioShares(props.address);
+        console.log(`portfolio shares count ${sharesCount}`)
+        let portfolioShares = []
+        if (sharesCount > 0) {
+            for (let i = 0; i < sharesCount; i++) {
+                const portfolioShare = await props.readContracts.MultiUserStacker.userPortfolios(props.address, i)
+                console.log("-->", { portfolioShare })
+                portfolioShares.push(portfolioShare)
+            }
+        }
+        const allSharses = prepareAllPortfolioShares(portfolioShares, tokenBalances)
+        console.log("ALL SHARES -> ", allSharses)
+        this.setState({ portfolioShares: allSharses, onLoad: false })
+    }
+
+    async reloadStake(props) {
+        const stake = await props.readContracts.MultiUserStacker.userTokenBalances(props.address);
+        const balance = { balance: utils.formatUnits(stake.balance.toString()), daysRemaining: stake.daysRemaining, token: stake.token };
+        this.setState({ userTokenBalance: balance })
+    }
+
+    async reloadTokenBalances(props) {
+        const NETWORK = "kovan";
+        const provider = NETWORK === "localhost" ? props.localProvider : props.mainnetProvider;
+
+        const tokenBalances = [];
+        const tokensToFetch = Object.keys(TOKENS[NETWORK]).filter(k => k != 'stake');
+        for (const token of tokensToFetch) {
+            const tokenDefn = TOKENS[NETWORK][token];
+
+            const tokenBalance = await getTokenBalance(provider, tokenDefn, props.address);
+            tokenBalances.push(tokenBalance)
+        }
+        this.setState({ tokenBalances })
+        return tokenBalances;
     }
 
     async loadAppData(props) {
@@ -150,52 +201,10 @@ export default class DailyStacker extends React.Component {
             const stackerNextTimestampStr = stackerNextTimestamp.toLocaleString();
             this.setState({ stackerLastTimestamp, stackerLastTimestampStr, stackerNextTimestamp, stackerNextTimestampStr })
 
-            props.readContracts.MultiUserStacker.userTokenBalances(props.address).then(stake => {
-                const balance = { balance: utils.formatUnits(stake.balance.toString()), daysRemaining: stake.daysRemaining, token: stake.token };
-                this.setState({ userTokenBalance: balance })
-            });
+            await this.reloadStake(props)
 
-            const NETWORK = "kovan";
-            const provider = NETWORK === "localhost" ? props.localProvider : props.mainnetProvider;
-
-            // const myMainnetDAIBalance = await props.writeContracts.DAI.balanceOf(props.address);
-            // console.log("DAI BALANCE", myMainnetDAIBalance)
-
-            const tokenBalancePromises = [];
-            for (const token of Object.keys(TOKENS[NETWORK]).filter(k => k != 'stake')) {
-                const tokenDefn = TOKENS[NETWORK][token];
-
-
-
-
-                const tokenBalancePromise = getTokenBalance(provider, tokenDefn, props.address);
-                tokenBalancePromises.push(tokenBalancePromise)
-            }
-            Promise.all(tokenBalancePromises).then((tokenBalances) => {
-                console.log("------> tokenBalances", tokenBalances)
-                this.setState({ tokenBalances })
-
-                props.readContracts.MultiUserStacker.noPortfolioShares(props.address).then(sharesCount => {
-                    console.log(`portfolio shares count ${sharesCount}`)
-                    if (sharesCount > 0) {
-                        const promisesPortfolioShare = []
-                        for (let i = 0; i < sharesCount; i++) {
-                            const promisePortfolioShare = props.readContracts.MultiUserStacker.userPortfolios(props.address, i)
-                            promisesPortfolioShare.push(promisePortfolioShare)
-                        }
-                        Promise.all(promisesPortfolioShare).then(portfolioShares => {
-                            console.log(`portfolio shares`, { portfolioShares })
-                            const allSharses = prepareAllPortfolioShares(portfolioShares, tokenBalances)
-                            console.log("ALL SHARES -> ", allSharses)
-                            this.setState({ portfolioShares: allSharses, onLoad: false })
-                        })
-                    } else {
-                        const allSharses = prepareAllPortfolioShares([], tokenBalances)
-                        console.log(allSharses)
-                        this.setState({ portfolioShares: allSharses, onLoad: false })
-                    }
-                })
-            });
+            const tokenBalances = await this.reloadTokenBalances(props)
+            await this.reloadPortfolio(props, tokenBalances)
 
 
         } else {
@@ -217,24 +226,140 @@ export default class DailyStacker extends React.Component {
         }
     }
 
+    async updateUserStake(stakeAmount, daysRemaining) {
+        this.setState({ stakeLoading: true, showStakeForm: false });
+
+        const result1 = this.props.tx(
+            this.props.mainnetWriteContracts.DAI.approve(this.props.readContracts.MultiUserStacker.address, stakeAmount),
+            update => {
+                console.log("📡 Transaction Update:", update);
+                if (update && (update.status === "confirmed" || update.status === 1)) {
+                    console.log(" 🍾 Transaction " + update.hash + " finished!");
+                    console.log(
+                        " ⛽️ " +
+                        update.gasUsed +
+                        "/" +
+                        (update.gasLimit || update.gas) +
+                        " @ " +
+                        parseFloat(update.gasPrice) / 1000000000 +
+                        " gwei",
+                    );
+                }
+            });
+        console.log("awaiting metamask/web3 confirm result...", result1);
+        console.log(await result1);
+
+        const result2 = this.props.tx(this.props.writeContracts.MultiUserStacker.setStake(this.props.mainnetWriteContracts.DAI.address, stakeAmount, daysRemaining), update => {
+            console.log("📡 Transaction Update:", update);
+            if (update && (update.status === "confirmed" || update.status === 1)) {
+                console.log(" 🍾 Transaction " + update.hash + " finished!");
+                console.log(
+                    " ⛽️ " +
+                    update.gasUsed +
+                    "/" +
+                    (update.gasLimit || update.gas) +
+                    " @ " +
+                    parseFloat(update.gasPrice) / 1000000000 +
+                    " gwei",
+                );
+            }
+        });
+        console.log("awaiting metamask/web3 confirm result...", result2);
+        console.log(await result2);
+
+        await this.reloadStake(this.props)
+
+        this.setState({ stakeLoading: false });
+    }
+
+    async updateUserPortfolio(tokenAddresses, percentages) {
+        this.setState({ portfolioLoading: true, showPortfolioForm: false });
+
+        const result = this.props.tx(this.props.writeContracts.MultiUserStacker.setPortfolio(tokenAddresses, percentages), update => {
+            console.log("📡 Transaction Update:", update);
+            if (update && (update.status === "confirmed" || update.status === 1)) {
+                console.log(" 🍾 Transaction " + update.hash + " finished!");
+                console.log(
+                    " ⛽️ " +
+                    update.gasUsed +
+                    "/" +
+                    (update.gasLimit || update.gas) +
+                    " @ " +
+                    parseFloat(update.gasPrice) / 1000000000 +
+                    " gwei",
+                );
+            }
+        });
+        console.log("awaiting metamask/web3 confirm result...", result);
+        console.log(await result);
+
+        await this.reloadPortfolio(this.props, this.state.tokenBalances);
+        this.setState({ portfolioLoading: false });
+    }
+
+    async stackNow() {
+        this.setState({ tokenBalancesLoading: true });
+        const result = this.props.tx(this.props.writeContracts.MultiUserStacker.performUpkeep(0x63), update => {
+            console.log("📡 Transaction Update:", update);
+            if (update && (update.status === "confirmed" || update.status === 1)) {
+                console.log(" 🍾 Transaction " + update.hash + " finished!");
+                console.log(
+                    " ⛽️ " +
+                    update.gasUsed +
+                    "/" +
+                    (update.gasLimit || update.gas) +
+                    " @ " +
+                    parseFloat(update.gasPrice) / 1000000000 +
+                    " gwei",
+                );
+            }
+        });
+        console.log("awaiting metamask/web3 confirm result...", result);
+        console.log(await result);
+        await this.reloadTokenBalances(this.props);
+        this.setState({ tokenBalancesLoading: false });
+    }
+
+    selectStakePanel() {
+        if (this.state.stakeLoading) {
+            return loadingColumn()
+        } else if (this.state.userTokenBalance.daysRemaining > 0 && !this.state.showStakeForm) {
+            return StakedPanel(this.state.userTokenBalance, () => { this.setState({ showStakeForm: true }) })
+        } else {
+            return (<StakedEntryPanel {...this.props} updateUserStake={this.updateUserStake} userTokenBalance={this.state.userTokenBalance} />)
+        }
+    }
+
+    selectPortfolioPanel() {
+        if (this.state.portfolioLoading) {
+            return loadingColumn()
+        } else if (this.state.portfolioShares.length > 0 && !this.state.showPortfolioForm) {
+            return PortfolioPanel(this.state.portfolioShares, this.state.tokenBalances, () => { this.setState({ showPortfolioForm: true }) })
+        } else {
+            return (<PortfolioEntryPanel {...this.props} portfolioShares={this.state.portfolioShares} tokenDefinitions={this.state.tokenBalances} updateUserPortfolio={this.updateUserPortfolio} />)
+        }
+    }
+
+    selectTokenBalancesPanel() {
+        if (this.state.tokenBalancesLoading) {
+            return loadingColumn()
+        } else {
+            const tokenBalanceRows = this.state.tokenBalances.map(tokenBalance => tokenBalanceRow(tokenBalance));
+
+            const tokenBalancesPanel = (
+                <Col span={8} justify="center">
+                    <h1>Your Token Balances</h1>
+                    {tokenBalanceRows}
+                </Col>
+            );
+            return tokenBalancesPanel;
+        }
+    }
+
     render() {
-        const stakedPanel = (this.state.userTokenBalance.daysRemaining > 0 && !this.state.showStakeForm) ?
-            StakedPanel(this.state.userTokenBalance, () => { this.setState({ showStakeForm: true }) }) :
-            (<StakedEntryPanel {...this.props} hideStakeForm={() => this.setState({ showStakeForm: false })} userTokenBalance={this.state.userTokenBalance} />);
-
-        // const portfolioPanel = (portfolioShares.length > 0 && !showPortfolioForm) ? PortfolioPanel(setShowPortfolioForm) : PortfolioEntryPanel(portfolioShares, tokenBalances, setShowPortfolioForm, setPortfolioShares);
-        const portfolioPanel = (this.state.portfolioShares.length > 0 && !this.state.showPortfolioForm) ?
-            PortfolioPanel(this.state.portfolioShares, this.state.tokenBalances, () => { this.setState({ showPortfolioForm: true }) }) :
-            (<PortfolioEntryPanel {...this.props} portfolioShares={this.state.portfolioShares} tokenDefinitions={this.state.tokenBalances} hidePortfolioEntryForm={() => { this.setState({ showPortfolioForm: false }) }} />);
-
-        const tokenBalanceRows = this.state.tokenBalances.map(tokenBalance => tokenBalanceRow(tokenBalance));
-
-        const tokenBalancesPanel = (
-            <Col span={8} justify="center">
-                <h1>Your Token Balances</h1>
-                {tokenBalanceRows}
-            </Col>
-        );
+        const stakedPanel = this.selectStakePanel();
+        const portfolioPanel = this.selectPortfolioPanel();
+        const tokenBalancesPanel = this.selectTokenBalancesPanel();
 
         const threeColumnPanel = (
             <Row justify="start">
@@ -253,23 +378,7 @@ export default class DailyStacker extends React.Component {
                             <h3>Last Stacked At {this.state.stackerLastTimestampStr}</h3>
 
                             <Button size="large" type="primary" style={{ marginTop: 8 }} onClick={async () => {
-                                const result = this.props.tx(this.props.writeContracts.MultiUserStacker.performUpkeep(0x63), update => {
-                                    console.log("📡 Transaction Update:", update);
-                                    if (update && (update.status === "confirmed" || update.status === 1)) {
-                                        console.log(" 🍾 Transaction " + update.hash + " finished!");
-                                        console.log(
-                                            " ⛽️ " +
-                                            update.gasUsed +
-                                            "/" +
-                                            (update.gasLimit || update.gas) +
-                                            " @ " +
-                                            parseFloat(update.gasPrice) / 1000000000 +
-                                            " gwei",
-                                        );
-                                    }
-                                });
-                                console.log("awaiting metamask/web3 confirm result...", result);
-                                console.log(await result);
+                                this.stackNow()
                             }}>
                                 Stack Now!
                             </Button>
